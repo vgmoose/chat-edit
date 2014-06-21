@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys, signal, os
 
 print "=================="
@@ -10,6 +13,10 @@ openwords = ["open", "load"]
 savewords = ["save", "write"]
 quitwords = ["quit", "stop", "exit", "done"]
 yeswords = ["yes", "y", "ya", "yeah", "okay", "sure", "ok"]
+printwords = ["print", "show", "current", "line", "display", "where"]
+movewords = ["go", "move"]
+rightwords = ["right", "l"]
+leftwords = ["left", "h"]
 
 # [ and ] denote a system message
 def msg(string):
@@ -29,6 +36,19 @@ class ChatEdit:
         self.changes = False
         self.file = "none"
         self.contents = ""
+        self.y = 0
+        self.x = 0
+        self.pos = 0
+        self.lpos = 0
+        self.rpos = 0
+    
+    def getline(self, around):
+        if self.contents == "":
+            return "█"
+        line = self.contents[self.lpos:self.rpos]
+        line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
+        msg("selection: " + self.contents[self.pos])
+        return line
     
     # main interpret method that processes input
     def interpret(self, input):
@@ -41,9 +61,14 @@ class ChatEdit:
                 if not confirm("create " + args + "?"):
                     msg("filesystem not touched")
                     return
-            self.file = open(args, "w+")
+            self.file = open(args, "rw+")
             self.contents = self.file.read()
             self.changes = False
+            
+            self.rpos = self.contents.find("\n")
+            if self.rpos == -1:
+                self.rpos = len(self.contents)
+            
             msg(command + "ed " + self.file.name + " into memory")
 
         elif command in savewords:
@@ -64,6 +89,29 @@ class ChatEdit:
                     interpret(input)
                 else:
                     msg("quit cancelled")
+
+        elif command in printwords:
+            try:
+                around = int(args)
+            except:
+                around = 1
+            print self.getline(around)
+
+        elif command in movewords:
+            self.interpret(args)
+        
+        elif command in rightwords or command in leftwords:
+            try:
+                around = int(args)
+            except:
+                around = 1
+            
+            if command in leftwords:
+                around = -around
+
+            self.pos += around
+                
+            print(self.getline(1))
 
         else:
             msg("invalid command")
