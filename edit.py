@@ -1,4 +1,4 @@
-import sys, signal
+import sys, signal, os
 
 print "=================="
 print "welcome to [chat-edit]"
@@ -37,6 +37,10 @@ class ChatEdit:
         args = " ".join(words[1:])
         
         if command in openwords:
+            if not os.path.isfile(args):
+                if not confirm("create " + args + "?"):
+                    msg("filesystem not touched")
+                    return
             self.file = open(args, "w+")
             self.contents = self.file.read()
             self.changes = False
