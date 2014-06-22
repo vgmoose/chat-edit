@@ -47,13 +47,19 @@ class ChatEdit:
         self.lpos = 0
         self.rpos = 0
     
+    def fixrpos(self):
+        self.rpos = self.contents.find("\n")
+        if self.rpos == -1:
+            self.rpos = len(self.contents)
+    
     def getline(self, around):
+        self.fixrpos()
         if self.contents == "":
             return "█"
         line = self.contents[self.lpos:self.rpos]
-	if self.rpos == self.pos:
-	    line = line[:self.pos-self.lpos] + "█" 
-	else:
+        if self.rpos == self.pos:
+            line = line[:self.pos-self.lpos] + "█" 
+        else:
             line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
             msg("selection: " + self.contents[self.pos])
         return line
@@ -66,9 +72,7 @@ class ChatEdit:
         self.contents = self.file.read()
         self.changes = False
         
-        self.rpos = self.contents.find("\n")
-        if self.rpos == -1:
-            self.rpos = len(self.contents)
+        self.fixrpos()
         
         msg("loaded " + self.file.name + " into memory")
 
@@ -114,7 +118,12 @@ class ChatEdit:
             print self.getline(around)
 
         elif command in movewords:
-            self.interpret(args)
+            if args == "$":
+                self.pos = self.rpos
+            elif args == "^":
+                self.pos = self.lpos
+            else:
+                self.interpret(args)
         
         elif command in rightwords or command in leftwords:
             try:
@@ -130,6 +139,7 @@ class ChatEdit:
             print(self.getline(1))
 
 	elif command in delwords:
+	    self.changes = True
 	    try:
 	    	length = int(args)
 	    except:
