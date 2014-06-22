@@ -50,8 +50,11 @@ class ChatEdit:
         if self.contents == "":
             return "█"
         line = self.contents[self.lpos:self.rpos]
-        line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
-        msg("selection: " + self.contents[self.pos])
+	if self.rpos == self.pos:
+	    line = line[:self.pos-self.lpos] + "█" 
+	else:
+            line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
+            msg("selection: " + self.contents[self.pos])
         return line
 
     def load_file(self, args):
