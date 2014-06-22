@@ -17,19 +17,23 @@ printwords = ["print", "show", "current", "line", "display", "where"]
 movewords = ["go", "move"]
 rightwords = ["right", "l"]
 leftwords = ["left", "h"]
+typewords = ["type", "insert"]
+delwords = ["delete", "x", "del"]
+
+resp_flag = ""
 
 # [ and ] denote a system message
 def msg(string):
     print "[" + string + "]"
 
-def confirm(string):
+def exit_editor():
+    msg("now exiting")
+    exit()
+
+def confirm(string, cb):
+    global resp_flag
     msg(string)
-    sys.stdout.write("> ")
-    response = raw_input()
-    if response in yeswords:
-        return True
-    else:
-        return False
+    resp_flag = cb
 
 class ChatEdit:
     def __init__(self):
@@ -49,46 +53,54 @@ class ChatEdit:
         line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
         msg("selection: " + self.contents[self.pos])
         return line
-    
+
+    def load_file(self, args):
+        try:
+            self.file = open(args, "r+")
+        except:
+            self.file = open(args, "w+")
+        self.contents = self.file.read()
+        self.changes = False
+        
+        self.rpos = self.contents.find("\n")
+        if self.rpos == -1:
+            self.rpos = len(self.contents)
+        
+        msg("loaded " + self.file.name + " into memory")
+
     # main interpret method that processes input
     def interpret(self, input):
+        global resp_flag
         words = input.split(" ")
         command = words[0].lower()
         args = " ".join(words[1:])
         
-        if command in openwords:
+        if resp_flag != "":
+            if command in yeswords:
+                resp_flag()
+
+            resp_flag = ""
+    
+        elif command in openwords:
             if not os.path.isfile(args):
-                if not confirm("create " + args + "?"):
-                    msg("filesystem not touched")
-                    return
-            self.file = open(args, "rw+")
-            self.contents = self.file.read()
-            self.changes = False
-            
-            self.rpos = self.contents.find("\n")
-            if self.rpos == -1:
-                self.rpos = len(self.contents)
-            
-            msg(command + "ed " + self.file.name + " into memory")
+                confirm("create " + args + "?", lambda: self.load_file(args))
+                return
+            self.load_file(args);
 
         elif command in savewords:
             if self.file == "none":
                 msg("no file is loaded")
             else:
+                self.file.seek(0)
                 self.file.write(self.contents)
                 self.changes = False
                 msg(str(len(self.contents)) + " characters written to " + self.file.name)
 
         elif command in quitwords:
             if not self.changes:
-                msg("now exiting")
-                exit()
+                exit_editor()
             else:
-                if confirm("quit without saving?"):
-                    self.changes = False
-                    interpret(input)
-                else:
-                    msg("quit cancelled")
+                confirm("quit without saving?", lambda: exit_editor())
 
         elif command in printwords:
             try:
@@ -111,6 +123,13 @@ class ChatEdit:
 
             self.pos += around
                 
+            print(self.getline(1))
+
+        elif command in typewords:
+            self.changes = True
+            self.contents = self.contents[:self.pos] + args + self.contents[self.pos:]
+            self.rpos += len(args)
+            self.pos += len(args)
             print(self.getline(1))
 
         else:
