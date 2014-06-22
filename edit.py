@@ -17,7 +17,8 @@ printwords = ["print", "show", "current", "line", "display", "where"]
 movewords = ["go", "move"]
 rightwords = ["right", "l"]
 leftwords = ["left", "h"]
-typewords = ["type", "insert"]
+typewords = ["i", "type", "insert"]
+appendwords = ["a", "append"]
 delwords = ["delete", "x", "del"]
 
 resp_flag = ""
@@ -127,6 +128,19 @@ class ChatEdit:
             self.pos += around
                 
             print(self.getline(1))
+
+	elif command in delwords:
+	    try:
+	    	length = int(args)
+	    except:
+		length = 1
+	    self.contents = self.contents[:self.pos] + self.contents[self.pos+length:]
+	    self.rpos -= length
+	    print(self.getline(1))
+
+	elif command in appendwords:
+	    self.pos += 1
+	    self.interpret("i " + args)
 
         elif command in typewords:
             self.changes = True
