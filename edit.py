@@ -20,6 +20,7 @@ leftwords = ["left", "h"]
 typewords = ["i", "type", "insert"]
 appendwords = ["a", "append"]
 delwords = ["delete", "x", "del"]
+selwords = ["select", "v", "sel"]
 
 resp_flag = ""
 
@@ -46,6 +47,7 @@ class ChatEdit:
         self.pos = 0
         self.lpos = 0
         self.rpos = 0
+        self.selectrange = 1
     
     def fixrpos(self):
         self.rpos = self.contents.find("\n")
@@ -60,17 +62,18 @@ class ChatEdit:
         if self.rpos == self.pos:
             line = line[:self.pos-self.lpos] + "█" 
         else:
-            line = line[:self.pos-self.lpos] + "█" + line[self.pos-self.lpos+1:]
-            msg("selection: " + self.contents[self.pos])
+            line = line[:self.pos-self.lpos] + "█"*self.selectrange + line[self.pos-self.lpos+self.selectrange:]
+            msg("selection: " + self.contents[self.pos:self.pos+self.selectrange])
         return line
 
     def load_file(self, args):
         try:
             self.file = open(args, "r+")
+            self.contents = self.file.read()
+            self.changes = False
+        
         except:
             self.file = open(args, "w+")
-        self.contents = self.file.read()
-        self.changes = False
         
         self.fixrpos()
         
@@ -120,8 +123,10 @@ class ChatEdit:
         elif command in movewords:
             if args == "$":
                 self.pos = self.rpos
+                print(self.getline(1))
             elif args == "^":
                 self.pos = self.lpos
+                print(self.getline(1))
             else:
                 self.interpret(args)
         
@@ -143,10 +148,20 @@ class ChatEdit:
 	    try:
 	    	length = int(args)
 	    except:
-		length = 1
+	    	length = self.selectrange
+	    	self.selectrange = 1
 	    self.contents = self.contents[:self.pos] + self.contents[self.pos+length:]
 	    self.rpos -= length
 	    print(self.getline(1))
+
+	elif command in selwords:
+		try:
+			value = int(args)
+		except:
+			value = 1
+
+		self.selectrange += value
+		print(self.getline(1))
 
 	elif command in appendwords:
 	    self.pos += 1
