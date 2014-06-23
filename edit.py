@@ -17,6 +17,8 @@ printwords = ["print", "show", "current", "line", "display", "where"]
 movewords = ["go", "move"]
 rightwords = ["right", "l"]
 leftwords = ["left", "h"]
+upwords = ["up", "k"]
+downwords = ["down", "j"]
 typewords = ["i", "type", "insert"]
 appendwords = ["a", "append"]
 delwords = ["delete", "x", "del"]
@@ -49,7 +51,7 @@ class ChatEdit:
     def getline(self, around):
         if self.contents == [] or self.contents[self.vpos] == "":
             return "█"
-        line = self.contents[self.vpos][:-1]
+        line = self.contents[self.vpos]
         c = line[self.pos:self.pos+self.selectrange]
         if len(line) == self.pos:
             line = line + "█" 
@@ -62,7 +64,7 @@ class ChatEdit:
         try:
             self.file = open(args, "r+")
             for line in self.file:
-                self.contents.append(line)
+                self.contents.append(line.rstrip("\n"))
             self.changes = False
         
         except:
@@ -96,6 +98,8 @@ class ChatEdit:
             	counter = 0
                 self.file.seek(0)
                 for line in self.contents:
+                    if counter > 0:
+                        self.file.write("\n")
                     self.file.write(line)
                     counter += len(line)
                 self.changes = False
@@ -144,7 +148,7 @@ class ChatEdit:
 	    except:
 	    	length = self.selectrange
 	    	self.selectrange = 1
-	    self.contents[self.vpos] = self.contents[self.vpos][self.pos] + self.contents[self.vpos][self.pos+length]
+	    self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + self.contents[self.vpos][self.pos+length:]
 	    print(self.getline(1))
 
 	elif command in selwords:
@@ -164,8 +168,9 @@ class ChatEdit:
             self.changes = True
             if (self.contents == []):
                 self.contents.append("")
+            print args
             self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + args + self.contents[self.vpos][self.pos:]
-            self.pos += len(args)
+            self.pos += len(args)-1
             print(self.getline(1))
 
         else:
