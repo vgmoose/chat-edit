@@ -41,41 +41,32 @@ class ChatEdit:
     def __init__(self):
         self.changes = False
         self.file = "none"
-        self.contents = ""
-        self.y = 0
-        self.x = 0
+        self.contents = []
         self.pos = 0
-        self.lpos = 0
-        self.rpos = 0
+        self.vpos = 0
         self.selectrange = 1
     
-    def fixrpos(self):
-        self.rpos = self.contents.find("\n")
-        if self.rpos == -1:
-            self.rpos = len(self.contents)
-    
     def getline(self, around):
-        self.fixrpos()
-        if self.contents == "":
+        if self.contents == [] or self.contents[self.vpos] == "":
             return "█"
-        line = self.contents[self.lpos:self.rpos]
-        if self.rpos == self.pos:
-            line = line[:self.pos-self.lpos] + "█" 
+        line = self.contents[self.vpos][:-1]
+        c = line[self.pos:self.pos+self.selectrange]
+        if len(line) == self.pos:
+            line = line + "█" 
         else:
-            line = line[:self.pos-self.lpos] + "█"*self.selectrange + line[self.pos-self.lpos+self.selectrange:]
-            msg("selection: " + self.contents[self.pos:self.pos+self.selectrange])
+            line = line[:self.pos] + "█"*self.selectrange + line[self.pos+self.selectrange:]
+            msg("selection: " + c)
         return line
 
     def load_file(self, args):
         try:
             self.file = open(args, "r+")
-            self.contents = self.file.read()
+            for line in self.file:
+                self.contents.append(line)
             self.changes = False
         
         except:
             self.file = open(args, "w+")
-        
-        self.fixrpos()
         
         msg("loaded " + self.file.name + " into memory")
 
@@ -102,10 +93,13 @@ class ChatEdit:
             if self.file == "none":
                 msg("no file is loaded")
             else:
+            	counter = 0
                 self.file.seek(0)
-                self.file.write(self.contents)
+                for line in self.contents:
+                    self.file.write(line)
+                    counter += len(line)
                 self.changes = False
-                msg(str(len(self.contents)) + " characters written to " + self.file.name)
+                msg(str(counter) + " characters written to " + self.file.name)
 
         elif command in quitwords:
             if not self.changes:
@@ -122,10 +116,10 @@ class ChatEdit:
 
         elif command in movewords:
             if args == "$":
-                self.pos = self.rpos
+                self.pos = len(self.contents[self.vpos])-1
                 print(self.getline(1))
             elif args == "^":
-                self.pos = self.lpos
+                self.pos = 0
                 print(self.getline(1))
             else:
                 self.interpret(args)
@@ -150,8 +144,7 @@ class ChatEdit:
 	    except:
 	    	length = self.selectrange
 	    	self.selectrange = 1
-	    self.contents = self.contents[:self.pos] + self.contents[self.pos+length:]
-	    self.rpos -= length
+	    self.contents[self.vpos] = self.contents[self.vpos][self.pos] + self.contents[self.vpos][self.pos+length]
 	    print(self.getline(1))
 
 	elif command in selwords:
@@ -169,8 +162,9 @@ class ChatEdit:
 
         elif command in typewords:
             self.changes = True
-            self.contents = self.contents[:self.pos] + args + self.contents[self.pos:]
-            self.rpos += len(args)
+            if (self.contents == []):
+                self.contents.append("")
+            self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + args + self.contents[self.vpos][self.pos:]
             self.pos += len(args)
             print(self.getline(1))
 
