@@ -23,6 +23,8 @@ typewords = ["i", "type", "insert"]
 appendwords = ["a", "append"]
 delwords = ["delete", "x", "del"]
 selwords = ["select", "v", "sel"]
+linewords = ["return", "enter", "newline", "\n"]
+joinwords = ["join", "merge", "j"]
 
 resp_flag = ""
 
@@ -95,7 +97,7 @@ class ChatEdit:
             if self.file == "none":
                 msg("no file is loaded")
             else:
-            	counter = 0
+                counter = 0
                 self.file.seek(0)
                 for line in self.contents:
                     if counter > 0:
@@ -128,41 +130,47 @@ class ChatEdit:
             else:
                 self.interpret(args)
         
-        elif command in rightwords or command in leftwords:
+        elif command in rightwords or command in leftwords or command in upwords or command in downwords:
             try:
                 around = int(args)
             except:
                 around = 1
             
-            if command in leftwords:
+            if command in leftwords or command in upwords:
                 around = -around
 
-            self.pos += around
-                
+            if command in leftwords or command in rightwords:
+                self.pos += around
+
+            if command in upwords or command in downwords:
+                self.vpos += around
+                if self.pos >= len(self.contents[self.vpos]):
+                    self.interpret("move $")
+
             print(self.getline(1))
 
-	elif command in delwords:
-	    self.changes = True
-	    try:
-	    	length = int(args)
-	    except:
-	    	length = self.selectrange
-	    	self.selectrange = 1
-	    self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + self.contents[self.vpos][self.pos+length:]
-	    print(self.getline(1))
+        elif command in delwords:
+            self.changes = True
+            try:
+                length = int(args)
+            except:
+                length = self.selectrange
+                self.selectrange = 1
+            self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + self.contents[self.vpos][self.pos+length:]
+            print(self.getline(1))
 
-	elif command in selwords:
-		try:
-			value = int(args)
-		except:
-			value = 1
+        elif command in selwords:
+            try:
+                value = int(args)
+            except:
+                value = 1
 
-		self.selectrange += value
-		print(self.getline(1))
+            self.selectrange += value
+            print(self.getline(1))
 
-	elif command in appendwords:
-	    self.pos += 1
-	    self.interpret("i " + args)
+        elif command in appendwords:
+            self.pos += 1
+            self.interpret("i " + args)
 
         elif command in typewords:
             self.changes = True
@@ -171,6 +179,22 @@ class ChatEdit:
             print args
             self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + args + self.contents[self.vpos][self.pos:]
             self.pos += len(args)-1
+            print(self.getline(1))
+        
+        elif command in linewords:
+            if args in appendwords:
+                self.pos += 1
+            line = self.contents[self.vpos]
+            output = line[self.pos:]
+            self.contents.insert(self.vpos+1, output)
+            self.contents[self.vpos] = line[:self.pos]
+            self.vpos += 1
+            self.pos = 0
+            print(self.getline(1))
+        
+        elif command in joinwords:
+            self.contents[self.vpos] = self.contents[self.vpos] + self.contents[self.vpos+1]
+            del self.contents[self.vpos+1]
             print(self.getline(1))
 
         else:
