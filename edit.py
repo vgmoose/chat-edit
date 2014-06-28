@@ -24,7 +24,7 @@ appendwords = ["a", "append"]
 delwords = ["delete", "x", "del"]
 selwords = ["select", "v", "sel"]
 linewords = ["return", "enter", "newline", "\n"]
-joinwords = ["join", "merge", "j"]
+joinwords = ["join", "merge"]
 
 resp_flag = ""
 
@@ -99,12 +99,14 @@ class ChatEdit:
             else:
                 counter = 0
                 self.file.seek(0)
+                
                 for line in self.contents:
                     if counter > 0:
                         self.file.write("\n")
                     self.file.write(line)
                     counter += len(line)
                 self.changes = False
+                self.file.truncate()
                 msg(str(counter) + " characters written to " + self.file.name)
 
         elif command in quitwords:
