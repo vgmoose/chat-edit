@@ -10,7 +10,7 @@ print "=================="
 
 # various vocabulary for editing files
 openwords = ["open", "load"]
-savewords = ["save", "write"]
+savewords = ["save", "write", ":w", ":wq"]
 quitwords = ["quit", "stop", "exit", "done"]
 yeswords = ["yes", "y", "ya", "yeah", "okay", "sure", "ok"]
 printwords = ["print", "show", "current", "line", "display", "where"]
@@ -44,7 +44,7 @@ def confirm(string, cb):
     resp_flag = cb
 
 class ChatEdit:
-    def __init__(self):
+    def __init__(self, args):
         self.changes = False
         self.file = "none"
         self.contents = []
@@ -52,6 +52,8 @@ class ChatEdit:
         self.vpos = 0
         self.selectrange = 1
 	self.lastsearch = ""
+	if args != []:
+	    self.interpret("load " + args[0])
     
     def getline(self, around):
         if self.contents == [] or self.contents[self.vpos] == "":
@@ -111,6 +113,8 @@ class ChatEdit:
                 self.changes = False
                 self.file.truncate()
                 msg(str(counter) + " characters written to " + self.file.name)
+		if command[-1] == "q":
+		    self.interpret("quit")
 
         elif command in quitwords:
             if not self.changes:
@@ -132,6 +136,12 @@ class ChatEdit:
             elif args == "^":
                 self.pos = 0
                 print(self.getline(1))
+            elif args == "gg":
+                self.vpos = 0  
+                print(self.getline(1)) 
+            elif args == "G":
+               self.vpos = len(self.contents)-1
+               print(self.getline(1))  
             else:
                 self.interpret(args)
         
@@ -245,7 +255,7 @@ class ChatEdit:
         else:
             msg("invalid command")
 
-main = ChatEdit()
+main = ChatEdit(sys.argv[1:])
 
 def signal_handler(signal, frame):
     print ""
