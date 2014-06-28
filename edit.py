@@ -148,6 +148,8 @@ class ChatEdit:
                 self.vpos += around
                 if self.pos >= len(self.contents[self.vpos]):
                     self.interpret("move $")
+		if self.pos < 0:
+		    self.interpret("move ^")
 
             print(self.getline(1))
 
