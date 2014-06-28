@@ -25,6 +25,8 @@ delwords = ["delete", "x", "del"]
 selwords = ["select", "v", "sel"]
 linewords = ["return", "enter", "newline", "\n"]
 joinwords = ["join", "merge"]
+findwords = ["find", "/", "search", "locate"]
+refindwords = ["n", "repeat", "again"]
 
 resp_flag = ""
 
@@ -49,6 +51,7 @@ class ChatEdit:
         self.pos = 0
         self.vpos = 0
         self.selectrange = 1
+	self.lastsearch = ""
     
     def getline(self, around):
         if self.contents == [] or self.contents[self.vpos] == "":
@@ -153,6 +156,41 @@ class ChatEdit:
 
             print(self.getline(1))
 
+	elif command in findwords:
+	    if args == "":
+		self.interpret("n")
+	    self.lastsearch = args
+	    thisline = self.contents[self.vpos][self.pos+1:]
+	    located = thisline.find(args)
+	    if located >= 0:
+		self.pos = located+self.pos+1
+	        msg(args + " found on line " + str(self.vpos))
+	        print(self.getline(1))
+		return 
+	    restofcontent = self.contents[self.vpos+1:]
+	    linecount = self.vpos
+	    for line in restofcontent:
+		linecount += 1
+		located = line.find(args)
+		if located >= 0:
+		    self.pos = located
+		    self.vpos = linecount
+		    msg(args + " found on line " + str(self.vpos))
+		    print(self.getline(1))
+		    return 
+	    restofcontent = self.contents[:self.vpos+1]
+	    linecount = -1
+	    for line in restofcontent:
+		linecount += 1
+		located = line.find(args)
+		if located >= 0:
+		    self.pos = located
+		    self.vpos = linecount
+		    msg(args + " found on line " + str(self.vpos))
+		    print(self.getline(1))
+		    return
+	    msg(args + " not found")
+
         elif command in delwords:
             self.changes = True
             try:
@@ -171,6 +209,9 @@ class ChatEdit:
 
             self.selectrange += value
             print(self.getline(1))
+	
+	elif command in refindwords:
+	    self.interpret("find " + self.lastsearch)
 
         elif command in appendwords:
             self.pos += 1
