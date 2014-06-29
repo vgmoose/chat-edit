@@ -11,7 +11,7 @@ print "=================="
 # various vocabulary for editing files
 openwords = ["open", "load"]
 savewords = ["save", "write", ":w", ":wq"]
-quitwords = ["quit", "stop", "exit", "done"]
+quitwords = ["quit", "stop", "exit", "done", ":q"]
 yeswords = ["yes", "y", "ya", "yeah", "okay", "sure", "ok"]
 printwords = ["print", "show", "current", "line", "display", "where"]
 movewords = ["go", "move"]
@@ -27,6 +27,7 @@ linewords = ["return", "enter", "newline", "\n"]
 joinwords = ["join", "merge"]
 findwords = ["find", "/", "search", "locate"]
 refindwords = ["n", "repeat", "again"]
+eolwords = ["$", "^", "g", "gg"]
 
 resp_flag = ""
 
@@ -54,8 +55,26 @@ class ChatEdit:
 	self.lastsearch = ""
 	if args != []:
 	    self.interpret("load " + args[0])
-    
-    def getline(self, around):
+
+    def eolMoves(self, symbol):
+        if symbol == "$":
+            self.pos = len(self.contents[self.vpos])-1
+            print(self.getline())
+        elif symbol == "^":
+            self.pos = 0
+            print(self.getline())
+        elif symbol == "gg":
+            self.vpos = 0
+            print(self.getline())
+        elif symbol == "G" or symbol == "g":
+            self.vpos = len(self.contents)-1
+            print(self.getline())
+
+    def getline(self, around=-1):
+        if around == -1:
+            around = self.vpos
+        if around != self.vpos:
+            return self.contents[around]
         if self.contents == [] or self.contents[self.vpos] == "":
             return "█"
         line = self.contents[self.vpos]
@@ -126,25 +145,24 @@ class ChatEdit:
             try:
                 around = int(args)
             except:
-                around = 1
-            print self.getline(around)
+                around = 0
+            
+            out = ""
+            for x in range(self.vpos-around, self.vpos+around+1):
+                if x >= 0 and x < len(self.contents):
+                    out += self.getline(x) + "\n"
+            
+            print out.rstrip("\n")
 
         elif command in movewords:
-            if args == "$":
-                self.pos = len(self.contents[self.vpos])-1
-                print(self.getline(1))
-            elif args == "^":
-                self.pos = 0
-                print(self.getline(1))
-            elif args == "gg":
-                self.vpos = 0  
-                print(self.getline(1)) 
-            elif args == "G":
-               self.vpos = len(self.contents)-1
-               print(self.getline(1))  
+            if args in eolwords:
+                self.eolMoves(args)
             else:
                 self.interpret(args)
-        
+
+        elif command in eolwords:
+            self.eolMoves(command)
+
         elif command in rightwords or command in leftwords or command in upwords or command in downwords:
             try:
                 around = int(args)
@@ -164,7 +182,7 @@ class ChatEdit:
 		if self.pos < 0:
 		    self.interpret("move ^")
 
-            print(self.getline(1))
+            print(self.getline())
 
 	elif command in findwords:
 	    if args == "":
@@ -175,7 +193,7 @@ class ChatEdit:
 	    if located >= 0:
 		self.pos = located+self.pos+1
 	        msg(args + " found on line " + str(self.vpos))
-	        print(self.getline(1))
+	        print(self.getline())
 		return 
 	    restofcontent = self.contents[self.vpos+1:]
 	    linecount = self.vpos
@@ -186,7 +204,7 @@ class ChatEdit:
 		    self.pos = located
 		    self.vpos = linecount
 		    msg(args + " found on line " + str(self.vpos))
-		    print(self.getline(1))
+		    print(self.getline())
 		    return 
 	    restofcontent = self.contents[:self.vpos+1]
 	    linecount = -1
@@ -197,7 +215,7 @@ class ChatEdit:
 		    self.pos = located
 		    self.vpos = linecount
 		    msg(args + " found on line " + str(self.vpos))
-		    print(self.getline(1))
+		    print(self.getline())
 		    return
 	    msg(args + " not found")
 
@@ -209,7 +227,7 @@ class ChatEdit:
                 length = self.selectrange
                 self.selectrange = 1
             self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + self.contents[self.vpos][self.pos+length:]
-            print(self.getline(1))
+            print(self.getline())
 
         elif command in selwords:
             try:
@@ -218,7 +236,7 @@ class ChatEdit:
                 value = 1
 
             self.selectrange += value
-            print(self.getline(1))
+            print(self.getline())
 	
 	elif command in refindwords:
 	    self.interpret("find " + self.lastsearch)
@@ -234,7 +252,7 @@ class ChatEdit:
             print args
             self.contents[self.vpos] = self.contents[self.vpos][:self.pos] + args + self.contents[self.vpos][self.pos:]
             self.pos += len(args)-1
-            print(self.getline(1))
+            print(self.getline())
         
         elif command in linewords:
             if args in appendwords:
@@ -245,12 +263,12 @@ class ChatEdit:
             self.contents[self.vpos] = line[:self.pos]
             self.vpos += 1
             self.pos = 0
-            print(self.getline(1))
+            print(self.getline())
         
         elif command in joinwords:
             self.contents[self.vpos] = self.contents[self.vpos] + self.contents[self.vpos+1]
             del self.contents[self.vpos+1]
-            print(self.getline(1))
+            print(self.getline())
 
         else:
             msg("invalid command")
